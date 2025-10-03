@@ -67,35 +67,6 @@ export const DrawingApp: React.FC = () => {
     }
   };
 
-  const handleSave = () => {
-    try {
-      const dataToSave = {
-        elements,
-        timestamp: new Date().toISOString(),
-      };
-      localStorage.setItem('drawing_save', JSON.stringify(dataToSave));
-      showSuccess('Dessin sauvegardé localement !');
-    } catch (error) {
-      showError('Erreur lors de la sauvegarde');
-    }
-  };
-
-  const handleLoad = () => {
-    const saved = localStorage.getItem('drawing_save');
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        // This would need to be implemented in useDrawing hook
-        console.log('Loading saved drawing:', data);
-        showSuccess('Dessin chargé avec succès !');
-      } catch (error) {
-        showError('Erreur lors du chargement de la sauvegarde');
-      }
-    } else {
-      showError('Aucune sauvegarde trouvée');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 animate-fade-in">
       {/* Header */}
@@ -104,7 +75,7 @@ export const DrawingApp: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent animate-bounce-gentle">
-                DrawMySolution
+                DrawMyApp
               </h1>
               <p className="text-gray-600 mt-1">Créez et exportez vos diagrammes avec élégance</p>
             </div>
@@ -205,31 +176,6 @@ export const DrawingApp: React.FC = () => {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-white/80 backdrop-blur-sm border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex gap-3">
-              <button
-                onClick={handleSave}
-                className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                💾 Sauvegarder
-              </button>
-              <button
-                onClick={handleLoad}
-                className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                📁 Charger
-              </button>
-            </div>
-            <div className="text-sm text-gray-500">
-              Fait avec ❤️ pour vos diagrammes
-            </div>
-          </div>
-        </div>
-      </footer>
 
       {/* Toast Notifications */}
       <Toast

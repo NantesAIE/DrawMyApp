@@ -1,4 +1,4 @@
-# DrawMySolution
+# DrawMyApp
 
 Une application web React moderne pour créer et exporter des diagrammes de solutions au format PNG.
 
@@ -31,7 +31,7 @@ Une application web React moderne pour créer et exporter des diagrammes de solu
 
 1. **Clonez le projet**
    ```bash
-   cd DrawMySolution
+   cd DrawMyApp
    ```
 
 2. **Installez les dépendances**
