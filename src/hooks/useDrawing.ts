@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import type { DrawingState, DrawingElement, DrawingTool, Point, DrawingPath, Shape, ImageElement } from '../types/drawing';
+import type { DrawingState, DrawingElement, DrawingTool, Point, DrawingPath, Shape, ImageElement, ResizeHandle } from '../types/drawing';
 import { uploadImageFile, resizeImage } from '../utils/imageUtils';
 
 const initialState: DrawingState = {
@@ -10,6 +10,7 @@ const initialState: DrawingState = {
   isDrawing: false,
   history: [[]],
   historyIndex: 0,
+  selectedImage: undefined,
 };
 
 export const useDrawing = () => {
@@ -106,6 +107,139 @@ export const useDrawing = () => {
   const setWidth = useCallback((width: number) => {
     setState(prev => ({ ...prev, currentWidth: width }));
   }, []);
+
+  // Helper function to check if a point is inside an image
+  const isPointInImage = (point: Point, image: ImageElement): boolean => {
+    return point.x >= image.position.x && 
+           point.x <= image.position.x + image.width &&
+           point.y >= image.position.y && 
+           point.y <= image.position.y + image.height;
+  };
+
+  // Helper function to get resize handles for an image
+  const getResizeHandles = (image: ImageElement): ResizeHandle[] => {
+    const { position, width, height } = image;
+    const handleSize = 8;
+    
+    return [
+      { x: position.x - handleSize/2, y: position.y - handleSize/2, type: 'nw' },
+      { x: position.x + width - handleSize/2, y: position.y - handleSize/2, type: 'ne' },
+      { x: position.x - handleSize/2, y: position.y + height - handleSize/2, type: 'sw' },
+      { x: position.x + width - handleSize/2, y: position.y + height - handleSize/2, type: 'se' },
+      { x: position.x + width/2 - handleSize/2, y: position.y - handleSize/2, type: 'n' },
+      { x: position.x + width/2 - handleSize/2, y: position.y + height - handleSize/2, type: 's' },
+      { x: position.x - handleSize/2, y: position.y + height/2 - handleSize/2, type: 'w' },
+      { x: position.x + width - handleSize/2, y: position.y + height/2 - handleSize/2, type: 'e' },
+    ];
+  };
+
+  // Helper function to check if a point is on a resize handle
+  const getResizeHandle = (point: Point, image: ImageElement): ResizeHandle | null => {
+    const handles = getResizeHandles(image);
+    const handleSize = 8;
+    
+    for (const handle of handles) {
+      if (point.x >= handle.x && point.x <= handle.x + handleSize &&
+          point.y >= handle.y && point.y <= handle.y + handleSize) {
+        return handle;
+      }
+    }
+    return null;
+  };
+
+  // Function to select an image
+  const selectImage = useCallback((imageId: string) => {
+    setState(prev => {
+      const imageElement = prev.elements.find(el => el.id === imageId && 'position' in el) as ImageElement;
+      if (!imageElement) return prev;
+
+      return {
+        ...prev,
+        selectedImage: {
+          element: imageElement,
+          isDragging: false,
+          isResizing: false,
+        }
+      };
+    });
+  }, []);
+
+  // Function to deselect image
+  const deselectImage = useCallback(() => {
+    setState(prev => ({ ...prev, selectedImage: undefined }));
+  }, []);
+
+  // Function to update selected image position
+  const updateImagePosition = useCallback((imageId: string, newPosition: Point) => {
+    setState(prev => {
+      const newElements = prev.elements.map(el => {
+        if (el.id === imageId && 'position' in el) {
+          return { ...el, position: newPosition } as ImageElement;
+        }
+        return el;
+      });
+
+      // Update selected image if it's the one being moved
+      const newSelectedImage = prev.selectedImage && prev.selectedImage.element.id === imageId 
+        ? { ...prev.selectedImage, element: { ...prev.selectedImage.element, position: newPosition } }
+        : prev.selectedImage;
+
+      return {
+        ...prev,
+        elements: newElements,
+        selectedImage: newSelectedImage,
+      };
+    });
+  }, []);
+
+  // Function to update selected image size
+  const updateImageSize = useCallback((imageId: string, newWidth: number, newHeight: number, newPosition?: Point) => {
+    setState(prev => {
+      const newElements = prev.elements.map(el => {
+        if (el.id === imageId && 'position' in el) {
+          const updated = { ...el, width: newWidth, height: newHeight } as ImageElement;
+          if (newPosition) {
+            updated.position = newPosition;
+          }
+          return updated;
+        }
+        return el;
+      });
+
+      // Update selected image if it's the one being resized
+      const newSelectedImage = prev.selectedImage && prev.selectedImage.element.id === imageId 
+        ? { 
+            ...prev.selectedImage, 
+            element: { 
+              ...prev.selectedImage.element, 
+              width: newWidth, 
+              height: newHeight,
+              position: newPosition || prev.selectedImage.element.position
+            } 
+          }
+        : prev.selectedImage;
+
+      return {
+        ...prev,
+        elements: newElements,
+        selectedImage: newSelectedImage,
+      };
+    });
+  }, []);
+
+  // Function to save current state to history
+  const saveToHistory = useCallback(() => {
+    setState(prev => {
+      const newHistory = prev.history.slice(0, prev.historyIndex + 1);
+      newHistory.push([...prev.elements]);
+      
+      return {
+        ...prev,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  }, []);
     
     const addImage = useCallback(async (point: Point) => {
     try {
@@ -146,6 +280,62 @@ export const useDrawing = () => {
 
   const startDrawing = useCallback((point: Point) => {
     setState(prev => {
+      // Handle select tool - check for image selection first
+      if (prev.currentTool === 'select') {
+        // Check if clicking on a resize handle of selected image
+        if (prev.selectedImage) {
+          const resizeHandle = getResizeHandle(point, prev.selectedImage.element);
+          if (resizeHandle) {
+            return {
+              ...prev,
+              selectedImage: {
+                ...prev.selectedImage,
+                isResizing: true,
+                resizeHandle,
+              }
+            };
+          }
+          
+          // Check if clicking on the selected image to drag it
+          if (isPointInImage(point, prev.selectedImage.element)) {
+            return {
+              ...prev,
+              selectedImage: {
+                ...prev.selectedImage,
+                isDragging: true,
+                dragOffset: {
+                  x: point.x - prev.selectedImage.element.position.x,
+                  y: point.y - prev.selectedImage.element.position.y,
+                }
+              }
+            };
+          }
+        }
+        
+        // Check for image selection
+        for (let i = prev.elements.length - 1; i >= 0; i--) {
+          const element = prev.elements[i];
+          if ('position' in element && isPointInImage(point, element as ImageElement)) {
+            const imageElement = element as ImageElement;
+            return {
+              ...prev,
+              selectedImage: {
+                element: imageElement,
+                isDragging: true,
+                isResizing: false,
+                dragOffset: {
+                  x: point.x - imageElement.position.x,
+                  y: point.y - imageElement.position.y,
+                }
+              }
+            };
+          }
+        }
+        
+        // If clicking on empty space, deselect
+        return { ...prev, selectedImage: undefined };
+      }
+
       // Handle image tool
       if (prev.currentTool === 'image') {
         // Don't set isDrawing for image tool
@@ -189,19 +379,25 @@ export const useDrawing = () => {
           const newHistory = prev.history.slice(0, prev.historyIndex + 1);
           newHistory.push([...newElements]);
           
+          // Deselect if the erased element was selected
+          const newSelectedImage = prev.selectedImage?.element.id === elementToErase.id 
+            ? undefined 
+            : prev.selectedImage;
+          
           return {
             ...prev,
             elements: newElements,
             history: newHistory,
             historyIndex: newHistory.length - 1,
+            selectedImage: newSelectedImage,
           };
         }
         
         return prev;
       }
       
-      // Normal drawing logic
-      const newState = { ...prev, isDrawing: true };
+      // Normal drawing logic - deselect any selected image when starting to draw
+      const newState = { ...prev, isDrawing: true, selectedImage: undefined };
       
       if (prev.currentTool === 'pen') {
         currentPathRef.current = {
@@ -224,11 +420,97 @@ export const useDrawing = () => {
       
       return newState;
     });
-  }, [addImage]);
+  }, [addImage, isPointInImage, getResizeHandle, isPointNearPath, isPointInShape]);
 
   const updateDrawing = useCallback((point: Point) => {
     setState(prev => {
-      if (!prev.isDrawing || prev.currentTool === 'eraser') return prev;
+      // Handle image dragging
+      if (prev.selectedImage?.isDragging && prev.selectedImage.dragOffset) {
+        const newPosition = {
+          x: point.x - prev.selectedImage.dragOffset.x,
+          y: point.y - prev.selectedImage.dragOffset.y,
+        };
+        
+        // Update the image position
+        updateImagePosition(prev.selectedImage.element.id, newPosition);
+        return prev;
+      }
+      
+      // Handle image resizing
+      if (prev.selectedImage?.isResizing && prev.selectedImage.resizeHandle) {
+        const handle = prev.selectedImage.resizeHandle;
+        const img = prev.selectedImage.element;
+        let newWidth = img.width;
+        let newHeight = img.height;
+        let newPosition = img.position;
+        
+        const aspectRatio = img.originalWidth / img.originalHeight;
+        
+        switch (handle.type) {
+          case 'se': // Bottom-right
+            newWidth = Math.max(20, point.x - img.position.x);
+            newHeight = Math.max(20, point.y - img.position.y);
+            // Maintain aspect ratio
+            if (newWidth / aspectRatio !== newHeight) {
+              newHeight = newWidth / aspectRatio;
+            }
+            break;
+          case 'sw': // Bottom-left
+            newWidth = Math.max(20, img.position.x + img.width - point.x);
+            newHeight = Math.max(20, point.y - img.position.y);
+            newPosition = { x: point.x, y: img.position.y };
+            // Maintain aspect ratio
+            if (newWidth / aspectRatio !== newHeight) {
+              newHeight = newWidth / aspectRatio;
+            }
+            break;
+          case 'ne': // Top-right
+            newWidth = Math.max(20, point.x - img.position.x);
+            newHeight = Math.max(20, img.position.y + img.height - point.y);
+            newPosition = { x: img.position.x, y: point.y };
+            // Maintain aspect ratio
+            if (newWidth / aspectRatio !== newHeight) {
+              newHeight = newWidth / aspectRatio;
+              newPosition.y = img.position.y + img.height - newHeight;
+            }
+            break;
+          case 'nw': // Top-left
+            newWidth = Math.max(20, img.position.x + img.width - point.x);
+            newHeight = Math.max(20, img.position.y + img.height - point.y);
+            newPosition = { x: point.x, y: point.y };
+            // Maintain aspect ratio
+            if (newWidth / aspectRatio !== newHeight) {
+              newHeight = newWidth / aspectRatio;
+              newPosition.y = img.position.y + img.height - newHeight;
+            }
+            break;
+          case 'n': // Top
+            newHeight = Math.max(20, img.position.y + img.height - point.y);
+            newWidth = newHeight * aspectRatio;
+            newPosition = { x: img.position.x - (newWidth - img.width) / 2, y: point.y };
+            break;
+          case 's': // Bottom
+            newHeight = Math.max(20, point.y - img.position.y);
+            newWidth = newHeight * aspectRatio;
+            newPosition = { x: img.position.x - (newWidth - img.width) / 2, y: img.position.y };
+            break;
+          case 'w': // Left
+            newWidth = Math.max(20, img.position.x + img.width - point.x);
+            newHeight = newWidth / aspectRatio;
+            newPosition = { x: point.x, y: img.position.y - (newHeight - img.height) / 2 };
+            break;
+          case 'e': // Right
+            newWidth = Math.max(20, point.x - img.position.x);
+            newHeight = newWidth / aspectRatio;
+            newPosition = { x: img.position.x, y: img.position.y - (newHeight - img.height) / 2 };
+            break;
+        }
+        
+        updateImageSize(img.id, newWidth, newHeight, newPosition);
+        return prev;
+      }
+
+      if (!prev.isDrawing || prev.currentTool === 'eraser' || prev.currentTool === 'select') return prev;
 
       if (prev.currentTool === 'pen' && currentPathRef.current) {
         currentPathRef.current.points.push(point);
@@ -252,11 +534,28 @@ export const useDrawing = () => {
       
       return prev;
     });
-  }, []);
+  }, [updateImagePosition, updateImageSize]);
 
   const endDrawing = useCallback(() => {
     setState(prev => {
-      if (prev.isDrawing && prev.currentTool !== 'eraser') {
+      // Handle end of image dragging or resizing
+      if (prev.selectedImage?.isDragging || prev.selectedImage?.isResizing) {
+        // Save to history when finishing drag or resize
+        saveToHistory();
+        
+        return {
+          ...prev,
+          selectedImage: prev.selectedImage ? {
+            ...prev.selectedImage,
+            isDragging: false,
+            isResizing: false,
+            dragOffset: undefined,
+            resizeHandle: undefined,
+          } : undefined,
+        };
+      }
+
+      if (prev.isDrawing && prev.currentTool !== 'eraser' && prev.currentTool !== 'select') {
         const newElements = [...prev.elements];
         const newHistory = prev.history.slice(0, prev.historyIndex + 1);
         newHistory.push([...newElements]);
@@ -273,7 +572,7 @@ export const useDrawing = () => {
       }
       return prev;
     });
-  }, []);
+  }, [saveToHistory]);
 
   const undo = useCallback(() => {
     setState(prev => {
@@ -360,5 +659,11 @@ export const useDrawing = () => {
     clear,
     canUndo,
     canRedo,
+    selectImage,
+    deselectImage,
+    updateImagePosition,
+    updateImageSize,
+    getResizeHandles,
+    isPointInImage,
   };
 };

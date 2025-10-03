@@ -11,7 +11,8 @@ import {
   Redo,
   Trash2,
   Download,
-  Palette
+  Palette,
+  MousePointer
 } from 'lucide-react';
 import type { DrawingTool } from '../types/drawing';
 
@@ -31,6 +32,7 @@ interface ToolbarProps {
 }
 
 const tools: { tool: DrawingTool; icon: React.ReactNode; label: string }[] = [
+  { tool: 'select', icon: <MousePointer size={20} />, label: 'Sélection' },
   { tool: 'pen', icon: <Pen size={20} />, label: 'Pinceau' },
   { tool: 'rectangle', icon: <Square size={20} />, label: 'Rectangle' },
   { tool: 'circle', icon: <Circle size={20} />, label: 'Cercle' },

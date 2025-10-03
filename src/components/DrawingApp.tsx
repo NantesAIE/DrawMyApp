@@ -20,6 +20,7 @@ export const DrawingApp: React.FC = () => {
     currentTool,
     currentColor,
     currentWidth,
+    selectedImage,
     setTool,
     setColor,
     setWidth,
@@ -122,6 +123,7 @@ export const DrawingApp: React.FC = () => {
                   ref={canvasRef}
                   elements={elements}
                   currentTool={currentTool}
+                  selectedImage={selectedImage}
                   onMouseDown={handleMouseDown}
                   onMouseMove={updateDrawing}
                   onMouseUp={endDrawing}

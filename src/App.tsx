@@ -1,4 +1,3 @@
-import React from 'react';
 import { DrawingApp } from './components/DrawingApp';
 import './App.css';
 

@@ -32,9 +32,23 @@ export interface ImageElement {
   originalHeight: number;
 }
 
+export interface ResizeHandle {
+  x: number;
+  y: number;
+  type: 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w';
+}
+
+export interface SelectedImage {
+  element: ImageElement;
+  isDragging: boolean;
+  isResizing: boolean;
+  resizeHandle?: ResizeHandle;
+  dragOffset?: Point;
+}
+
 export type DrawingElement = DrawingPath | Shape | ImageElement;
 
-export type DrawingTool = 'pen' | 'rectangle' | 'circle' | 'arrow' | 'text' | 'eraser' | 'image';
+export type DrawingTool = 'pen' | 'rectangle' | 'circle' | 'arrow' | 'text' | 'eraser' | 'image' | 'select';
 
 export interface DrawingState {
   elements: DrawingElement[];
@@ -44,4 +58,5 @@ export interface DrawingState {
   isDrawing: boolean;
   history: DrawingElement[][];
   historyIndex: number;
+  selectedImage?: SelectedImage;
 }

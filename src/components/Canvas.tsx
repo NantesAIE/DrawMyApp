@@ -1,9 +1,10 @@
 import React, { useEffect, useCallback, forwardRef, useRef } from 'react';
-import type { Point, DrawingElement, DrawingPath, Shape, ImageElement } from '../types/drawing';
+import type { Point, DrawingElement, DrawingPath, Shape, ImageElement, SelectedImage } from '../types/drawing';
 
 interface CanvasProps {
   elements: DrawingElement[];
   currentTool: string;
+  selectedImage?: SelectedImage;
   onMouseDown: (point: Point) => void;
   onMouseMove: (point: Point) => void;
   onMouseUp: () => void;
@@ -14,6 +15,7 @@ interface CanvasProps {
 export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
   elements,
   currentTool,
+  selectedImage,
   onMouseDown,
   onMouseMove,
   onMouseUp,
@@ -27,20 +29,51 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
   React.useImperativeHandle(ref, () => canvasRef.current!, []);
   
   // Determine cursor based on current tool
-  const getCursor = () => {
-      switch (currentTool) {
-          case 'eraser':
-              return 'pointer';
-          case 'text':
-              return 'text';
-          case 'image':
-              return 'copy';
-          case 'pen':
-              return 'crosshair';
+  const getCursor = useCallback(() => {
+    // If we're hovering over a resize handle, show resize cursor
+    if (selectedImage && currentTool === 'select') {
+      if (selectedImage.isResizing && selectedImage.resizeHandle) {
+        const handle = selectedImage.resizeHandle;
+        switch (handle.type) {
+          case 'nw':
+          case 'se':
+            return 'nw-resize';
+          case 'ne':
+          case 'sw':
+            return 'ne-resize';
+          case 'n':
+          case 's':
+            return 'ns-resize';
+          case 'e':
+          case 'w':
+            return 'ew-resize';
           default:
-              return 'crosshair';
+            return 'default';
+        }
       }
-  };
+      
+      if (selectedImage.isDragging) {
+        return 'grabbing';
+      }
+      
+      return 'grab';
+    }
+    
+    switch (currentTool) {
+      case 'eraser':
+        return 'pointer';
+      case 'text':
+        return 'text';
+      case 'image':
+        return 'copy';
+      case 'select':
+        return 'default';
+      case 'pen':
+        return 'crosshair';
+      default:
+        return 'crosshair';
+    }
+  }, [currentTool, selectedImage]);
 
   const drawPath = useCallback((ctx: CanvasRenderingContext2D, path: DrawingPath) => {
     if (!path.points || path.points.length < 2 || !path.points[0]) return;
@@ -127,6 +160,40 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
     }
   }, []);
 
+  // Function to draw selection outline and resize handles
+  const drawImageSelection = useCallback((ctx: CanvasRenderingContext2D, imageElement: ImageElement) => {
+    const { position, width, height } = imageElement;
+    
+    // Draw selection outline
+    ctx.strokeStyle = '#0066cc';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.strokeRect(position.x - 2, position.y - 2, width + 4, height + 4);
+    ctx.setLineDash([]);
+    
+    // Draw resize handles
+    const handleSize = 8;
+    const handles = [
+      { x: position.x - handleSize/2, y: position.y - handleSize/2 }, // nw
+      { x: position.x + width - handleSize/2, y: position.y - handleSize/2 }, // ne
+      { x: position.x - handleSize/2, y: position.y + height - handleSize/2 }, // sw
+      { x: position.x + width - handleSize/2, y: position.y + height - handleSize/2 }, // se
+      { x: position.x + width/2 - handleSize/2, y: position.y - handleSize/2 }, // n
+      { x: position.x + width/2 - handleSize/2, y: position.y + height - handleSize/2 }, // s
+      { x: position.x - handleSize/2, y: position.y + height/2 - handleSize/2 }, // w
+      { x: position.x + width - handleSize/2, y: position.y + height/2 - handleSize/2 }, // e
+    ];
+    
+    ctx.fillStyle = '#0066cc';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    
+    handles.forEach(handle => {
+      ctx.fillRect(handle.x, handle.y, handleSize, handleSize);
+      ctx.strokeRect(handle.x, handle.y, handleSize, handleSize);
+    });
+  }, []);
+
   // Preload images function
   const preloadImages = useCallback(() => {
     const imageElements = elements.filter(el => 'position' in el) as ImageElement[];
@@ -170,7 +237,12 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
         drawShape(ctx, element as Shape);
       }
     });
-  }, [elements, drawPath, drawShape, drawImage]);
+
+    // Draw selection overlay for selected image
+    if (selectedImage && currentTool === 'select') {
+      drawImageSelection(ctx, selectedImage.element);
+    }
+  }, [elements, selectedImage, currentTool, drawPath, drawShape, drawImage, drawImageSelection]);
 
   useEffect(() => {
     preloadImages();
