@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
-import type { DrawingState, DrawingElement, DrawingTool, Point, DrawingPath, Shape } from '../types/drawing';
+import type { DrawingState, DrawingElement, DrawingTool, Point, DrawingPath, Shape, ImageElement } from '../types/drawing';
+import { uploadImageFile, resizeImage } from '../utils/imageUtils';
 
 const initialState: DrawingState = {
   elements: [],
@@ -105,9 +106,53 @@ export const useDrawing = () => {
   const setWidth = useCallback((width: number) => {
     setState(prev => ({ ...prev, currentWidth: width }));
   }, []);
+    
+    const addImage = useCallback(async (point: Point) => {
+    try {
+      const { imageData, width, height } = await uploadImageFile();
+      
+      // Resize image if too large (max 400x400 for canvas)
+      const maxSize = 400;
+      const resizedImage = await resizeImage(imageData, maxSize, maxSize);
+      
+      setState(prev => {
+        const imageElement: ImageElement = {
+          id: Date.now().toString(),
+          type: 'image',
+          position: point,
+          width: resizedImage.width,
+          height: resizedImage.height,
+          imageData: resizedImage.imageData,
+          originalWidth: width,
+          originalHeight: height,
+        };
+
+        const newElements = [...prev.elements, imageElement];
+        const newHistory = prev.history.slice(0, prev.historyIndex + 1);
+        newHistory.push([...newElements]);
+        
+        return {
+          ...prev,
+          elements: newElements,
+          history: newHistory,
+          historyIndex: newHistory.length - 1,
+        };
+      });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de l\'image:', error);
+      alert('Erreur lors du chargement de l\'image. Veuillez réessayer.');
+    }
+  }, []);
 
   const startDrawing = useCallback((point: Point) => {
     setState(prev => {
+      // Handle image tool
+      if (prev.currentTool === 'image') {
+        // Don't set isDrawing for image tool
+        addImage(point);
+        return prev;
+      }
+      
       // Handle eraser tool
       if (prev.currentTool === 'eraser') {
         // Find element to erase
@@ -122,9 +167,17 @@ export const useDrawing = () => {
               elementToErase = element;
               break;
             }
-          } else {
+          } else if ('startPoint' in element) {
             // It's a shape
             if (isPointInShape(point, element as Shape)) {
+              elementToErase = element;
+              break;
+            }
+          } else if ('position' in element) {
+            // It's an image
+            const img = element as ImageElement;
+            if (point.x >= img.position.x && point.x <= img.position.x + img.width &&
+                point.y >= img.position.y && point.y <= img.position.y + img.height) {
               elementToErase = element;
               break;
             }
@@ -171,7 +224,7 @@ export const useDrawing = () => {
       
       return newState;
     });
-  }, []);
+  }, [addImage]);
 
   const updateDrawing = useCallback((point: Point) => {
     setState(prev => {
@@ -301,6 +354,7 @@ export const useDrawing = () => {
     updateDrawing,
     endDrawing,
     addText,
+    addImage,
     undo,
     redo,
     clear,

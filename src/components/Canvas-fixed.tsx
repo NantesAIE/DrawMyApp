@@ -137,7 +137,9 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
         img.onload = () => {
           imageCache.current.set(imageElement.id, img);
           // Trigger a redraw when image loads
-          redraw();
+          requestAnimationFrame(() => {
+            redraw();
+          });
         };
         img.src = imageElement.imageData;
         imageCache.current.set(imageElement.id, img);
@@ -210,7 +212,7 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
       onMouseMove={handleMouseMove}
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseUp}
-      className="border-2 border-gray-200 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+      className="border border-gray-300 bg-white"
       style={{ display: 'block', cursor: getCursor() }}
     />
   );

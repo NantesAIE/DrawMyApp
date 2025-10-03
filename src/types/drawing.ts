@@ -21,9 +21,20 @@ export interface Shape {
   text?: string;
 }
 
-export type DrawingElement = DrawingPath | Shape;
+export interface ImageElement {
+  id: string;
+  type: 'image';
+  position: Point;
+  width: number;
+  height: number;
+  imageData: string; // base64 encoded image
+  originalWidth: number;
+  originalHeight: number;
+}
 
-export type DrawingTool = 'pen' | 'rectangle' | 'circle' | 'arrow' | 'text' | 'eraser';
+export type DrawingElement = DrawingPath | Shape | ImageElement;
+
+export type DrawingTool = 'pen' | 'rectangle' | 'circle' | 'arrow' | 'text' | 'eraser' | 'image';
 
 export interface DrawingState {
   elements: DrawingElement[];
