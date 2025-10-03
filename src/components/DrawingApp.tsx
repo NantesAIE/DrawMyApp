@@ -4,6 +4,7 @@ import { Toolbar } from './Toolbar';
 import { Toast } from './Toast';
 import { useDrawing } from '../hooks/useDrawing';
 import { useToast } from '../hooks/useToast';
+import { useCanvasSize } from '../hooks/useCanvasSize';
 import { exportCanvasDirectly } from '../utils/export';
 
 export const DrawingApp: React.FC = () => {
@@ -12,6 +13,7 @@ export const DrawingApp: React.FC = () => {
   const [textInput, setTextInput] = useState('');
   const [textPosition, setTextPosition] = useState({ x: 0, y: 0 });
   const { toast, showSuccess, showError, hideToast } = useToast();
+  const { width, height } = useCanvasSize();
 
   const {
     elements,
@@ -86,6 +88,9 @@ export const DrawingApp: React.FC = () => {
               <div className="px-3 py-1 bg-green-50 border border-green-200 rounded-full text-sm text-green-700 font-medium transition-all duration-200 hover:bg-green-100 capitalize">
                 {currentTool}
               </div>
+              <div className="px-3 py-1 bg-gray-50 border border-gray-200 rounded-full text-sm text-gray-600 font-medium transition-all duration-200 hover:bg-gray-100">
+                {width} × {height}px
+              </div>
             </div>
           </div>
         </div>
@@ -109,10 +114,9 @@ export const DrawingApp: React.FC = () => {
 
       {/* Canvas Area */}
       <main className="flex-1 p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full mx-auto">
           <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
             {/* Canvas Container */}
-            <div className="flex items-center justify-center p-8 bg-gray-50/50">
               <div className="relative">
                 <Canvas
                   ref={canvasRef}
@@ -121,8 +125,8 @@ export const DrawingApp: React.FC = () => {
                   onMouseDown={handleMouseDown}
                   onMouseMove={updateDrawing}
                   onMouseUp={endDrawing}
-                  width={1200}
-                  height={800}
+                  width={width}
+                  height={height}
                 />
                 
                 {/* Text Input Modal */}
@@ -172,7 +176,6 @@ export const DrawingApp: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
           </div>
         </div>
       </main>
