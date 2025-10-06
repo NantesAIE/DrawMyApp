@@ -12,24 +12,24 @@ export const useCanvasSize = () => {
   });
 
   const updateSize = useCallback(() => {
-    // Calcul de la taille disponible en tenant compte de la nouvelle structure sans padding root
+    // Calcul de la taille disponible avec la nouvelle structure
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
-    // Estimation plus précise des éléments de l'interface
-    const headerHeight = 100; // Header height ajusté
-    const toolbarHeight = 70; // Toolbar height ajusté  
-    const mainPadding = 48; // padding de main (p-6 = 24px * 2)
+    // Nouvelle estimation des éléments de l'interface
+    const headerHeight = 0; // Header commenté
+    const toolbarHeight = 90; // Toolbar en bas avec spacing (bottom-4 + height + padding)
+    const mainPadding = 32; // padding de main (p-4 = 16px * 2)
     const containerMargin = 0; // Marges du conteneur canvas
     const borderAndShadow = 8; // Espace pour les bordures et ombres
     
-    // Calcul avec la nouvelle structure (pas de padding root)
+    // Calcul avec la structure optimisée
     const availableWidth = Math.max(400, viewportWidth - mainPadding - containerMargin);
-    const availableHeight = Math.max(300, viewportHeight - headerHeight - toolbarHeight - mainPadding - borderAndShadow);
+    const availableHeight = Math.max(500, viewportHeight - headerHeight - toolbarHeight - mainPadding - borderAndShadow);
     
     // Assurer des tailles raisonnables pour le dessin
-    const finalWidth = Math.min(availableWidth, 4200); // Largeur max augmentée
-    const finalHeight = Math.min(availableHeight, 1200); // Hauteur max augmentée
+    const finalWidth = Math.min(availableWidth, 4200); // Largeur max
+    const finalHeight = Math.min(availableHeight, 2800); // Hauteur max
     
     setSize({
       width: Math.floor(finalWidth),

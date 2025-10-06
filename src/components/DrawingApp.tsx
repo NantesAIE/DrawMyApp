@@ -71,9 +71,9 @@ export const DrawingApp: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 animate-fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 animate-fade-in pb-16">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm animate-slide-up">
+      {/* <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm animate-slide-up">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -95,27 +95,11 @@ export const DrawingApp: React.FC = () => {
             </div>
           </div>
         </div>
-      </header>
-
-      {/* Toolbar */}
-      <Toolbar
-        currentTool={currentTool}
-        currentColor={currentColor}
-        currentWidth={currentWidth}
-        onToolChange={setTool}
-        onColorChange={setColor}
-        onWidthChange={setWidth}
-        onUndo={undo}
-        onRedo={redo}
-        onClear={clear}
-        onExport={handleExport}
-        canUndo={canUndo}
-        canRedo={canRedo}
-      />
+      </header> */}
 
       {/* Canvas Area */}
-      <main className="flex-1 p-6">
-        <div className="w-full mx-auto">
+      <main className="flex-1 p-4">
+        <div className="w-full h-full mx-auto">
           <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
             {/* Canvas Container */}
               <div className="relative">
@@ -181,6 +165,22 @@ export const DrawingApp: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Toolbar - maintenant en bas */}
+      <Toolbar
+        currentTool={currentTool}
+        currentColor={currentColor}
+        currentWidth={currentWidth}
+        onToolChange={setTool}
+        onColorChange={setColor}
+        onWidthChange={setWidth}
+        onUndo={undo}
+        onRedo={redo}
+        onClear={clear}
+        onExport={handleExport}
+        canUndo={canUndo}
+        canRedo={canRedo}
+      />
 
       {/* Toast Notifications */}
       <Toast
