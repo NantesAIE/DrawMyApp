@@ -43,9 +43,9 @@ const tools: { tool: DrawingTool; icon: React.ReactNode; label: string }[] = [
 ];
 
 const colors = [
-  '#000000', '#FF0000', '#00FF00', '#0000FF', 
-  '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500',
-  '#800080', '#008000', '#800000', '#000080'
+  '#1F2937', '#EF4444', '#10B981', '#3B82F6', 
+  '#F59E0B', '#8B5CF6', '#06B6D4', '#F97316',
+  '#EC4899', '#84CC16', '#6366F1', '#14B8A6'
 ];
 
 const widths = [1, 2, 4, 6, 8, 12];
@@ -117,13 +117,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     title={`Couleur: ${color}`}
                   />
                 ))}
-                <input
+                {/* <input
                   type="color"
                   value={currentColor}
                   onChange={(e) => onColorChange(e.target.value)}
                   className="w-6 h-6 rounded-md border-2 border-gray-300 cursor-pointer"
                   title="Couleur personnalisée"
-                />
+                /> */}
               </div>
             </div>
 
