@@ -14,6 +14,7 @@ import {
   Palette,
   MousePointer
 } from 'lucide-react';
+import logoAie from '../assets/logo-aie.svg';
 import type { DrawingTool } from '../types/drawing';
 
 interface ToolbarProps {
@@ -71,7 +72,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           {/* Logo AIE */}
           <div className="flex-shrink-0">
             <img 
-              src="src/assets/logo-aie.svg" 
+              src={logoAie} 
               alt="Logo AIE" 
               className="h-8 w-auto transition-all duration-200 filter"
               style={{
