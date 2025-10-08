@@ -50,6 +50,8 @@ export type DrawingElement = DrawingPath | Shape | ImageElement;
 
 export type DrawingTool = 'pen' | 'rectangle' | 'circle' | 'arrow' | 'text' | 'eraser' | 'image' | 'select';
 
+export type ToolbarPosition = 'top' | 'bottom';
+
 export interface DrawingState {
   elements: DrawingElement[];
   currentTool: DrawingTool;

@@ -6,12 +6,14 @@ import { useDrawing } from '../hooks/useDrawing';
 import { useToast } from '../hooks/useToast';
 import { useCanvasSize } from '../hooks/useCanvasSize';
 import { exportCanvasDirectly } from '../utils/export';
+import type { ToolbarPosition } from '../types/drawing';
 
 export const DrawingApp: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showTextInput, setShowTextInput] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [textPosition, setTextPosition] = useState({ x: 0, y: 0 });
+  const [toolbarPosition, setToolbarPosition] = useState<ToolbarPosition>('bottom');
   const { toast, showSuccess, showError, hideToast } = useToast();
   const { width, height } = useCanvasSize();
 
@@ -70,35 +72,24 @@ export const DrawingApp: React.FC = () => {
     }
   };
 
+  // Fonction pour obtenir les classes de padding en fonction de la position de la toolbar
+  const getMainPaddingClasses = () => {
+    switch (toolbarPosition) {
+      case 'top':
+        return 'pt-24 pb-6 px-6'; // pt-24 pour la toolbar en haut + espacement
+      case 'bottom':
+      default:
+        return 'pb-24 pt-6 px-6'; // pb-24 pour la toolbar en bas + espacement
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 animate-fade-in pb-16">
-      {/* Header */}
-      {/* <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm animate-slide-up">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent animate-bounce-gentle">
-                DrawMyApp
-              </h1>
-              <p className="text-gray-600 mt-1">Créez et exportez vos diagrammes avec élégance</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-sm text-blue-700 font-medium transition-all duration-200 hover:bg-blue-100">
-                {elements.length} élément{elements.length !== 1 ? 's' : ''}
-              </div>
-              <div className="px-3 py-1 bg-green-50 border border-green-200 rounded-full text-sm text-green-700 font-medium transition-all duration-200 hover:bg-green-100 capitalize">
-                {currentTool}
-              </div>
-              <div className="px-3 py-1 bg-gray-50 border border-gray-200 rounded-full text-sm text-gray-600 font-medium transition-all duration-200 hover:bg-gray-100">
-                {width} × {height}px
-              </div>
-            </div>
-          </div>
-        </div>
-      </header> */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 animate-fade-in">
+      {/* Header - Commenté pour l'instant */}
+      {/* ... */}
 
       {/* Canvas Area */}
-      <main className="flex-1 p-4">
+      <main className={`flex-1 ${getMainPaddingClasses()}`}>
         <div className="w-full h-full mx-auto">
           <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
             {/* Canvas Container */}
@@ -166,14 +157,16 @@ export const DrawingApp: React.FC = () => {
         </div>
       </main>
 
-      {/* Toolbar - maintenant en bas */}
+      {/* Toolbar */}
       <Toolbar
         currentTool={currentTool}
         currentColor={currentColor}
         currentWidth={currentWidth}
+        position={toolbarPosition}
         onToolChange={setTool}
         onColorChange={setColor}
         onWidthChange={setWidth}
+        onPositionChange={setToolbarPosition}
         onUndo={undo}
         onRedo={redo}
         onClear={clear}

@@ -12,18 +12,22 @@ import {
   Trash2,
   Download,
   Palette,
-  MousePointer
+  MousePointer,
+  PanelTop,
+  PanelBottom
 } from 'lucide-react';
 import logoAie from '../assets/logo-aie.svg';
-import type { DrawingTool } from '../types/drawing';
+import type { DrawingTool, ToolbarPosition } from '../types/drawing';
 
 interface ToolbarProps {
   currentTool: DrawingTool;
   currentColor: string;
   currentWidth: number;
+  position: ToolbarPosition;
   onToolChange: (tool: DrawingTool) => void;
   onColorChange: (color: string) => void;
   onWidthChange: (width: number) => void;
+  onPositionChange: (position: ToolbarPosition) => void;
   onUndo: () => void;
   onRedo: () => void;
   onClear: () => void;
@@ -51,13 +55,21 @@ const colors = [
 
 const widths = [1, 2, 4, 6, 8, 12];
 
+// Icônes de position pour la toolbar
+const positionIcons: { position: ToolbarPosition; icon: React.ReactNode; label: string }[] = [
+  { position: 'top', icon: <PanelTop size={16} />, label: 'Toolbar en haut' },
+  { position: 'bottom', icon: <PanelBottom size={16} />, label: 'Toolbar en bas' },
+];
+
 export const Toolbar: React.FC<ToolbarProps> = ({
   currentTool,
   currentColor,
   currentWidth,
+  position,
   onToolChange,
   onColorChange,
   onWidthChange,
+  onPositionChange,
   onUndo,
   onRedo,
   onClear,
@@ -65,10 +77,26 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   canUndo,
   canRedo,
 }) => {
+  // Fonction pour obtenir les classes CSS en fonction de la position
+  const getPositionClasses = () => {
+    switch (position) {
+      case 'top':
+        return 'fixed top-6 left-6 right-6'; // Espacement uniforme de 6 (24px)
+      case 'bottom':
+      default:
+        return 'fixed bottom-6 left-6 right-6'; // Espacement uniforme
+    }
+  };
+
+  // Fonction pour obtenir les classes de layout en fonction de la position
+  const getLayoutClasses = () => {
+    return 'flex-row overflow-x-auto';
+  };
+
   return (
-    <div className="fixed bottom-4 left-0 left-4 right-4 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg z-50 rounded-xl">
+    <div className={`${getPositionClasses()} bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg z-50 rounded-xl`}>
       <div className="max-w-full mx-auto px-4 py-3">
-        <div className="flex items-center justify-between gap-4 overflow-x-auto">
+        <div className={`flex items-center justify-between gap-4 ${getLayoutClasses()}`}>
           {/* Logo AIE */}
           <div className="flex-shrink-0">
             <img 
@@ -81,7 +109,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             />
           </div>
 
-          {/* Outils centrés */}
+          {/* Outils */}
           <div className="flex items-center gap-4 flex-1 justify-center">
             {/* Drawing Tools */}
             <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200 flex-shrink-0">
@@ -118,13 +146,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     title={`Couleur: ${color}`}
                   />
                 ))}
-                {/* <input
-                  type="color"
-                  value={currentColor}
-                  onChange={(e) => onColorChange(e.target.value)}
-                  className="w-6 h-6 rounded-md border-2 border-gray-300 cursor-pointer"
-                  title="Couleur personnalisée"
-                /> */}
               </div>
             </div>
 
@@ -189,6 +210,26 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <Download size={14} />
                 <span>Exporter</span>
               </button>
+            </div>
+
+            {/* Position Selector */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200">
+                {positionIcons.map(({ position: pos, icon, label }) => (
+                  <button
+                    key={pos}
+                    onClick={() => onPositionChange(pos)}
+                    className={`p-2 rounded-md transition-all duration-200 ${
+                      position === pos
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                        : 'text-gray-600 hover:bg-white hover:text-gray-800'
+                    }`}
+                    title={label}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
