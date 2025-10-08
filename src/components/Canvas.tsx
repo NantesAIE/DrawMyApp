@@ -263,6 +263,18 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
     };
   }, []);
 
+  const getTouchPos = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0] || e.changedTouches[0];
+    return {
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top,
+    };
+  }, []);
+
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = getMousePos(e);
     onMouseDown(point);
@@ -273,6 +285,23 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
     onMouseMove(point);
   }, [getMousePos, onMouseMove]);
 
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault(); // Empêche le comportement par défaut (scroll, zoom, etc.)
+    const point = getTouchPos(e);
+    onMouseDown(point);
+  }, [getTouchPos, onMouseDown]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault(); // Empêche le scroll pendant le dessin
+    const point = getTouchPos(e);
+    onMouseMove(point);
+  }, [getTouchPos, onMouseMove]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    onMouseUp();
+  }, [onMouseUp]);
+
   return (
     <canvas
       ref={canvasRef}
@@ -282,8 +311,12 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
       onMouseMove={handleMouseMove}
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       className="border-2 border-gray-200 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-      style={{ display: 'block', cursor: getCursor() }}
+      style={{ display: 'block', cursor: getCursor(), touchAction: 'none' }}
     />
   );
 });
